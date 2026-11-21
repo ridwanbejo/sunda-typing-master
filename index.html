@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sunda Typing Master — Phaser 3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sundanese:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="css/style.css?v=3" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.88.2/dist/phaser.min.js"></script>
+</head>
+<body>
+  <!-- Phaser Game Container -->
+  <div id="game-container" aria-label="Sundanese Typing Game Canvas"></div>
+
+  <!-- Live Keyman Sunda SNI IME Typing Dock -->
+  <div id="ime-dock" class="ime-dock hidden">
+    <div class="ime-input-wrap">
+      <span class="ime-badge" id="ime-status-badge">SUNDA SNI</span>
+      <input
+        id="ime-input"
+        type="text"
+        lang="su"
+        inputmode="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Type Sundanese characters using Keyman Sunda SNI..."
+        aria-label="Type the Sundanese word using Keyman Sunda SNI IME and press Enter"
+      />
+      <kbd class="enter-hint">Enter ↵</kbd>
+    </div>
+    <div class="ime-dock-meta">
+      <span id="ime-hint-text">Type the highlighted bottom row with <strong>Keyman Sunda SNI IME</strong>, then press <strong>Enter</strong>.</span>
+      <button id="btn-quit-game" type="button" class="btn-mini">End Session</button>
+    </div>
+  </div>
+
+  <!-- Pre-Game Configuration Overlay -->
+  <div id="config-overlay" class="overlay">
+    <div class="modal config-modal">
+      <header class="modal-header">
+        <div class="brand-blocks" aria-hidden="true">
+          <span class="b-tile t1">ᮞᮥ</span>
+          <span class="b-tile t2">ᮔ᮪</span>
+          <span class="b-tile t3">ᮓ</span>
+        </div>
+        <div>
+          <h1>Sunda Typing Master</h1>
+          <p class="subtitle">Keyman Sunda SNI IME Aksara Sunda Dictionary Typing Challenge</p>
+        </div>
+        <button id="btn-open-credits" type="button" class="btn-credits">
+          <span class="credits-glyph" aria-hidden="true">★</span>
+          <span>Credits</span>
+        </button>
+      </header>
+
+      <div id="dataset-loading" class="dataset-banner loading">
+        Loading Sundanese – Indonesian – English dictionary dataset...
+      </div>
+
+      <form id="config-form" class="config-grid hidden" novalidate>
+        <!-- 1. Aksara Sunda Filter -->
+        <section class="config-card span-2">
+          <div class="card-head">
+            <label class="section-label">1. Aksara Sunda Filter</label>
+            <span id="aksara-note" class="tiny-note">Converted from Sundanese dictionary entries</span>
+          </div>
+          <div class="aksara-row-4">
+            <label class="chip-radio cat-all">
+              <input type="radio" name="aksara-mode" value="all" checked />
+              <span class="chip-body">
+                <span class="chip-title">All Words</span>
+                <span class="chip-glyphs">ᮃᮘ᮪ᮓᮤ · ᮘᮕ</span>
+              </span>
+            </label>
+            <label class="chip-radio cat-swara">
+              <input type="radio" name="aksara-mode" value="swara" />
+              <span class="chip-body">
+                <span class="chip-title">Aksara Swara</span>
+                <span class="chip-glyphs">ᮃ ᮄ ᮅ ᮆ ᮇ ᮈ ᮉ</span>
+              </span>
+            </label>
+            <label class="chip-radio cat-ngalagena">
+              <input type="radio" name="aksara-mode" value="ngalagena" />
+              <span class="chip-body">
+                <span class="chip-title">Ngalagena Only</span>
+                <span class="chip-glyphs">ᮘᮕ · ᮎᮛ · ᮞᮠ</span>
+              </span>
+            </label>
+            <label class="chip-radio cat-rarangken">
+              <input type="radio" name="aksara-mode" value="rarangken" />
+              <span class="chip-body">
+                <span class="chip-title">With Rarangkén</span>
+                <span class="chip-glyphs">ᮊᮥᮛᮤᮀ · ᮞᮥᮔ᮪ᮓ</span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- 2. Random Word Count (10 - 200) -->
+        <section class="config-card">
+          <div class="card-head">
+            <label class="section-label" for="word-count-number">2. Random Words (10 – 200)</label>
+            <input
+              id="word-count-number"
+              type="number"
+              min="10"
+              max="200"
+              value="30"
+              class="num-input"
+            />
+          </div>
+          <input
+            id="word-count-range"
+            type="range"
+            min="10"
+            max="200"
+            step="1"
+            value="30"
+            class="range-slider"
+          />
+          <div class="range-marks">
+            <span>10</span>
+            <span>50</span>
+            <span>100</span>
+            <span>150</span>
+            <span>200</span>
+          </div>
+        </section>
+
+        <!-- 3. Game Time (1 - 5 min, default 2 min) -->
+        <section class="config-card">
+          <div class="card-head">
+            <label class="section-label" for="game-time-range">3. Game Time (1 – 5 min)</label>
+            <span id="game-time-display" class="pill-value">2 min</span>
+          </div>
+          <input
+            id="game-time-range"
+            type="range"
+            min="1"
+            max="5"
+            step="1"
+            value="2"
+            class="range-slider"
+          />
+          <div class="range-marks">
+            <span>1m</span>
+            <span>2m</span>
+            <span>3m</span>
+            <span>4m</span>
+            <span>5m</span>
+          </div>
+        </section>
+
+        <!-- 4. Easiness Level -->
+        <section class="config-card span-2">
+          <label class="section-label">4. Easiness (Aksara Blocks per Word)</label>
+          <div class="radio-row-4">
+            <label class="pill-radio diff-easy">
+              <input type="radio" name="easiness" value="easy" checked />
+              <span>
+                Easy
+                <small>1 – 3 characters</small>
+              </span>
+            </label>
+            <label class="pill-radio diff-medium">
+              <input type="radio" name="easiness" value="medium" />
+              <span>
+                Medium
+                <small>4 – 6 characters</small>
+              </span>
+            </label>
+            <label class="pill-radio diff-hard">
+              <input type="radio" name="easiness" value="hard" />
+              <span>
+                Hard
+                <small>7 – 10 characters</small>
+              </span>
+            </label>
+            <label class="pill-radio diff-all">
+              <input type="radio" name="easiness" value="all" />
+              <span>
+                All Lengths
+                <small>1 – 10 characters</small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Live Dictionary Pool Summary & Start CTA -->
+        <div class="config-footer span-2">
+          <div id="pool-summary" class="pool-summary">
+            Matching words: <strong>0</strong>
+          </div>
+          <button id="btn-start-game" type="submit" class="btn-primary">
+            Start Typing Challenge
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Game Over / Results Overlay -->
+  <div id="results-overlay" class="overlay hidden">
+    <div class="modal results-modal">
+      <div class="results-badge" id="results-badge">TIME'S UP</div>
+      <h2 id="results-title">Session Complete</h2>
+      <p id="results-subtitle" class="subtitle"></p>
+
+      <div class="stats-grid">
+        <div class="stat-card accent-gold">
+          <span class="stat-label">Final Score</span>
+          <strong class="stat-value" id="res-score">0</strong>
+          <span class="stat-unit">points (+10 / word)</span>
+        </div>
+        <div class="stat-card accent-cyan">
+          <span class="stat-label">Speed</span>
+          <strong class="stat-value" id="res-wpm">0.0</strong>
+          <span class="stat-unit">Words / Min (WPM)</span>
+        </div>
+        <div class="stat-card accent-emerald">
+          <span class="stat-label">Words Cleared</span>
+          <strong class="stat-value" id="res-cleared">0 / 0</strong>
+          <span class="stat-unit" id="res-time">0:00 elapsed</span>
+        </div>
+        <div class="stat-card accent-pink">
+          <span class="stat-label">Accuracy</span>
+          <strong class="stat-value" id="res-accuracy">100%</strong>
+          <span class="stat-unit" id="res-mistakes">0 mistakes</span>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <button id="btn-play-again" type="button" class="btn-primary">Play Again</button>
+        <button id="btn-back-config" type="button" class="btn-secondary">Change Settings</button>
+        <button id="btn-results-credits" type="button" class="btn-credits">
+          <span class="credits-glyph" aria-hidden="true">★</span>
+          <span>Credits</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credits Popup Overlay -->
+  <div id="credits-overlay" class="overlay overlay-top hidden" role="dialog" aria-modal="true" aria-labelledby="credits-title">
+    <div class="modal credits-modal">
+      <div class="credits-header">
+        <h2 id="credits-title">Credits</h2>
+        <button id="btn-close-credits-x" type="button" class="btn-icon-close" aria-label="Close credits">&times;</button>
+      </div>
+      <div id="credits-content" class="credits-content">
+        Loading credits...
+      </div>
+      <div class="credits-actions">
+        <button id="btn-close-credits" type="button" class="btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/vocabLoader.js?v=3"></script>
+  <script src="js/gameScene.js?v=3"></script>
+  <script src="js/main.js?v=3"></script>
+</body>
+</html>
